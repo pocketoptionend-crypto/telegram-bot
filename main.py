@@ -1,7 +1,9 @@
 import logging
+import os
+import threading
+from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
-import os
 
 # Конфиг
 TOKEN = os.getenv("BOT_TOKEN")  # токен берем из переменных окружения
@@ -32,7 +34,7 @@ def get_main_menu(user_id):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Меню:", reply_markup=get_main_menu(update.effective_user.id))
 
-# Обработка нажатий
+# Обработка кнопок
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -68,12 +70,24 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=CHANNEL_ID, text="🚀 Розыгрыш открыт! Жмите кнопку ниже:", reply_markup=join_button)
         await query.edit_message_text("Кнопка отправлена в канал 📢", reply_markup=get_main_menu(user_id))
 
-# Главная функция
-def main():
+# Запуск Telegram-бота
+def run_bot():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.run_polling()
 
+# Flask сервер (для Render)
+app_flask = Flask(__name__)
+
+@app_flask.route('/')
+def home():
+    return "✅ Bot is running on Render"
+
+def run_flask():
+    port = int(os.environ.get("PORT", 10000))
+    app_flask.run(host="0.0.0.0", port=port)
+
 if __name__ == "__main__":
-    main()
+    threading.Thread(target=run_flask).start()
+    run_bot()
