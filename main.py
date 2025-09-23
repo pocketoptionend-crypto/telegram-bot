@@ -11,7 +11,6 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-import os
 TOKEN = os.getenv("BOT_TOKEN")  # токен из переменных окружения
 
 # Flask для Render
